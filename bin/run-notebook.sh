@@ -197,16 +197,14 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Extract run ID
+# Extract run ID and URL
 RUN_ID=$(echo "$SUBMIT_RESULT" | jq -r '.run_id')
+RUN_PAGE_URL=$(echo "$SUBMIT_RESULT" | jq -r '.run_page_url')
 
 log_success "Job submitted successfully!"
 log_info "Run ID: $RUN_ID"
 log_info "Run Name: $RUN_NAME"
-
-# Get workspace URL
-WORKSPACE_URL=$(databricks auth describe --profile "$DATABRICKS_PROFILE" | grep "^Host:" | awk '{print $2}')
-log_info "View run: ${WORKSPACE_URL}#job/0/run/${RUN_ID}"
+log_info "View run: ${RUN_PAGE_URL}"
 
 # Wait for completion if requested
 if [ "$WAIT_FOR_COMPLETION" = true ]; then

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks Notebook Runner - Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3ClinearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23FF3621;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23FF6B35;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad1)'/%3E%3Cpath d='M25 30 L75 30 L75 70 L25 70 Z' fill='white' opacity='0.95'/%3E%3Crect x='30' y='40' width='30' height='4' rx='2' fill='url(%23grad2)'/%3E%3Crect x='30' y='50' width='40' height='4' rx='2' fill='url(%23grad2)'/%3E%3Crect x='30' y='60' width='25' height='4' rx='2' fill='url(%23grad2)'/%3E%3Ccircle cx='72' cy='42' r='6' fill='url(%23grad2)'/%3E%3Cpath d='M70 42 L71.5 43.5 L74 40.5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF3621 0%, #FF6B35 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section h2 {
+            color: #FF3621;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #FF3621;
+        }
+
+        .section h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-card h3 {
+            color: white;
+            margin: 0 0 15px 0;
+            font-size: 1.4em;
+        }
+
+        .feature-card p {
+            color: rgba(255,255,255,0.95);
+            margin: 0;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .command {
+            color: #dcdcaa;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .flag {
+            color: #9cdcfe;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .status-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .workflow-diagram {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            border-left: 5px solid #FF3621;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .workflow-step .number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .workflow-step .description {
+            flex: 1;
+        }
+
+        .workflow-step h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .workflow-step p {
+            color: #666;
+            margin: 0;
+            font-size: 0.95em;
+        }
+
+        .test-results {
+            background: #f0fdf4;
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .test-results h4 {
+            color: #10b981;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .test-item {
+            padding: 12px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        .test-item::before {
+            content: "✓";
+            color: #10b981;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .parameters {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .parameters h4 {
+            color: #f59e0b;
+            margin-bottom: 15px;
+        }
+
+        .parameters ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .parameters li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .parameters li:last-child {
+            border-bottom: none;
+        }
+
+        .parameters code {
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #92400e;
+        }
+
+        .footer {
+            background: #1e1e1e;
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .footer p {
+            color: #888;
+            margin: 5px 0;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Databricks Notebook Runner</h1>
+            <p>Serverless Compute CLI Wrapper</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2>Overview</h2>
+                <p>A generalizable CLI wrapper for running any Databricks notebook using serverless compute. This tool streamlines the process of executing notebooks from GitHub repositories or Databricks workspace with dynamic parameters and dependencies.</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>GitHub Integration</h3>
+                        <p>Run notebooks directly from GitHub repositories with automatic source syncing</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Serverless Compute</h3>
+                        <p>No cluster configuration needed - automatically provisions serverless resources</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Cross-Platform</h3>
+                        <p>Works on Linux, macOS, and Windows with native shell scripts and PowerShell support</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Dynamic Parameters</h3>
+                        <p>Pass JSON parameters at runtime for flexible notebook execution</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Dependency Management</h3>
+                        <p>Support for pip dependencies via notebook magic commands</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Project Structure</h2>
+                <div class="code-block">databricks_notebook/
+├── bin/
+│   ├── run-notebook.sh          <span class="comment"># CLI wrapper script (Linux/macOS)</span>
+│   ├── run-notebook.ps1         <span class="comment"># PowerShell script (Windows)</span>
+│   └── run-notebook.bat         <span class="comment"># Batch wrapper (Windows)</span>
+├── notebooks/
+│   ├── test_simple.py           <span class="comment"># Test: Simple notebook with parameters</span>
+│   ├── test_with_deps.py        <span class="comment"># Test: Notebook with dependencies</span>
+│   └── test_unity_catalog.py   <span class="comment"># Test: Notebook accessing Unity Catalog</span>
+├── docs/
+│   └── index.html               <span class="comment"># This documentation</span>
+├── requirements.txt             <span class="comment"># Shared dependencies</span>
+└── notebooks/requirements-test.txt <span class="comment"># Test-specific dependencies</span></div>
+            </div>
+
+            <div class="section">
+                <h2>Setup</h2>
+
+                <h3>Prerequisites</h3>
+                <p>Before using this tool, ensure you have:</p>
+                <ul style="margin-left: 40px; margin-bottom: 20px;">
+                    <li style="margin: 10px 0;">Databricks CLI installed and configured</li>
+                    <li style="margin: 10px 0;">Access to a Databricks workspace</li>
+                    <li style="margin: 10px 0;">Valid authentication credentials</li>
+                </ul>
+
+                <h3>Configuration</h3>
+                <p>The tool uses the <code>exploration</code> profile by default (CD49 workspace). Your configuration is stored in <code>~/.databrickscfg</code>:</p>
+
+                <div class="code-block">[exploration]
+host      = https://dbc-7c3c71fa-cd49.cloud.databricks.com
+auth_type = databricks-cli</div>
+
+                <p>Verify your authentication:</p>
+                <div class="code-block"><span class="command">databricks</span> <span class="flag">auth describe --profile</span> <span class="string">exploration</span></div>
+
+                <div class="test-results">
+                    <h4>Setup Verification</h4>
+                    <div class="test-item">Databricks CLI configured and authenticated</div>
+                    <div class="test-item">GitHub repository accessible</div>
+                    <div class="test-item">All test notebooks validated</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>How to Use</h2>
+
+                <h3>Basic Usage - GitHub Notebook</h3>
+                <p>Run a notebook from a GitHub repository with parameters:</p>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Linux/macOS:</h4>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"notebooks/test_simple"</span> <span class="flag">\
+  --git-url</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">\
+  --git-branch</span> <span class="string">"master"</span> <span class="flag">\
+  --params</span> <span class="string">'{"date": "2025-10-30", "mode": "test"}'</span> <span class="flag">\
+  --wait</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Windows (PowerShell):</h4>
+                <div class="code-block"><span class="command">.\bin\run-notebook.ps1</span> <span class="flag">`
+  -NotebookPath</span> <span class="string">"notebooks/test_simple"</span> <span class="flag">`
+  -GitUrl</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">`
+  -GitBranch</span> <span class="string">"master"</span> <span class="flag">`
+  -Params</span> <span class="string">'{"date": "2025-10-30", "mode": "test"}'</span> <span class="flag">`
+  -Wait</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Windows (Command Prompt):</h4>
+                <div class="code-block"><span class="command">bin\run-notebook.bat</span> <span class="flag">--notebook-path</span> <span class="string">"notebooks/test_simple"</span> <span class="flag">--git-url</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">--git-branch</span> <span class="string">"master"</span> <span class="flag">--params</span> <span class="string">"{\"date\": \"2025-10-30\", \"mode\": \"test\"}"</span> <span class="flag">--wait</span></div>
+
+                <h3>Run with Dependencies</h3>
+                <p>For notebooks requiring external Python packages, use <code>%pip</code> magic commands within the notebook:</p>
+                <div class="code-block"><span class="comment"># In your notebook:</span>
+<span class="comment"># MAGIC %pip install pandas requests python-dateutil</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Linux/macOS:</h4>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"notebooks/test_with_deps"</span> <span class="flag">\
+  --git-url</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">\
+  --wait</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Windows (PowerShell):</h4>
+                <div class="code-block"><span class="command">.\bin\run-notebook.ps1</span> <span class="flag">`
+  -NotebookPath</span> <span class="string">"notebooks/test_with_deps"</span> <span class="flag">`
+  -GitUrl</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">`
+  -Wait</span></div>
+
+                <h3>Run Workspace Notebook</h3>
+                <p>Execute notebooks already in your Databricks workspace:</p>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Linux/macOS:</h4>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"/Users/your.email@company.com/my_notebook"</span> <span class="flag">\
+  --params</span> <span class="string">'{"param1": "value1"}'</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Windows (PowerShell):</h4>
+                <div class="code-block"><span class="command">.\bin\run-notebook.ps1</span> <span class="flag">`
+  -NotebookPath</span> <span class="string">"/Users/your.email@company.com/my_notebook"</span> <span class="flag">`
+  -Params</span> <span class="string">'{"param1": "value1"}'</span></div>
+
+                <div class="parameters">
+                    <h4>Available Parameters</h4>
+                    <ul>
+                        <li><code>--notebook-path</code> - Path to notebook (required)</li>
+                        <li><code>--git-url</code> - GitHub repository URL (optional)</li>
+                        <li><code>--git-branch</code> - Git branch/tag/commit (default: master)</li>
+                        <li><code>--params</code> - JSON string of parameters (default: {})</li>
+                        <li><code>--run-name</code> - Custom run name (optional)</li>
+                        <li><code>--profile</code> - Databricks profile (default: exploration)</li>
+                        <li><code>--wait</code> - Wait for run to complete (optional)</li>
+                        <li><code>--verbose</code> - Show detailed output (optional)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>How It Works</h2>
+
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <div class="number">1</div>
+                        <div class="description">
+                            <h4>Configuration Building</h4>
+                            <p>The script parses your parameters and builds a JSON job configuration compatible with the Databricks Jobs API</p>
+                        </div>
+                    </div>
+
+                    <div class="workflow-step">
+                        <div class="number">2</div>
+                        <div class="description">
+                            <h4>Git Source Setup</h4>
+                            <p>For GitHub notebooks, the script configures git_source with your repository URL and branch</p>
+                        </div>
+                    </div>
+
+                    <div class="workflow-step">
+                        <div class="number">3</div>
+                        <div class="description">
+                            <h4>Job Submission</h4>
+                            <p>Submits the job to Databricks using <code>databricks jobs submit</code> API with serverless compute</p>
+                        </div>
+                    </div>
+
+                    <div class="workflow-step">
+                        <div class="number">4</div>
+                        <div class="description">
+                            <h4>Execution</h4>
+                            <p>Databricks provisions serverless compute resources, clones the repository (if applicable), and executes the notebook</p>
+                        </div>
+                    </div>
+
+                    <div class="workflow-step">
+                        <div class="number">5</div>
+                        <div class="description">
+                            <h4>Monitoring</h4>
+                            <p>With --wait flag, the script polls the job status until completion and reports the final result</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Serverless Compute</h3>
+                <p>The tool leverages Databricks serverless compute, which means:</p>
+                <ul style="margin-left: 40px; margin-bottom: 20px;">
+                    <li style="margin: 10px 0;"><strong>No cluster configuration:</strong> Resources are automatically provisioned</li>
+                    <li style="margin: 10px 0;"><strong>Fast startup:</strong> Jobs start within seconds</li>
+                    <li style="margin: 10px 0;"><strong>Cost-effective:</strong> Pay only for actual compute time</li>
+                    <li style="margin: 10px 0;"><strong>Scalable:</strong> Automatically scales based on workload</li>
+                </ul>
+
+                <h3>Dependency Management</h3>
+                <p>For notebook tasks with serverless compute, dependencies must be installed via <code>%pip</code> magic commands in the notebook itself:</p>
+                <div class="code-block"><span class="comment"># At the top of your notebook</span>
+<span class="comment"># MAGIC %pip install pandas requests python-dateutil</span>
+<span class="comment"># MAGIC dbutils.library.restartPython()  # If needed</span></div>
+                <p style="margin-top: 15px;"><strong>Note:</strong> The <code>--requirements</code> flag is not supported for notebook tasks with serverless compute. Only Python wheel tasks support the <code>environments</code> array.</p>
+            </div>
+
+            <div class="section">
+                <h2>Test Cases</h2>
+
+                <h3>1. Simple Parameter Test</h3>
+                <p><span class="status-badge status-success">✓ PASSED</span></p>
+                <p>Tests basic parameter passing without external dependencies. The notebook receives date, mode, and message parameters via <code>dbutils.widgets</code> and displays them.</p>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"notebooks/test_simple"</span> <span class="flag">\
+  --git-url</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">\
+  --params</span> <span class="string">'{"date": "2025-10-30", "mode": "test"}'</span> <span class="flag">\
+  --wait</span></div>
+
+                <h3>2. Dependencies Test</h3>
+                <p><span class="status-badge status-success">✓ PASSED</span></p>
+                <p>Tests notebook with external pip dependencies (pandas, requests, python-dateutil). Dependencies are installed via <code>%pip</code> magic commands in the notebook.</p>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"notebooks/test_with_deps"</span> <span class="flag">\
+  --git-url</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">\
+  --wait</span></div>
+
+                <h3>3. Unity Catalog Test</h3>
+                <p><span class="status-badge status-success">✓ PASSED</span></p>
+                <p>Tests access to Unity Catalog tables to verify permissions and data access capabilities.</p>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"notebooks/test_unity_catalog"</span> <span class="flag">\
+  --git-url</span> <span class="string">"https://github.com/jdowzard/databricks_notebook"</span> <span class="flag">\
+  --wait</span></div>
+            </div>
+
+            <div class="section">
+                <h2>Viewing Results</h2>
+
+                <h3>Via CLI Output</h3>
+                <p>When a job is submitted, the script outputs a direct URL to view the run:</p>
+                <div class="code-block"><span class="comment">✓ Job submitted successfully!</span>
+<span class="comment">ℹ Run ID: 1034604035924365</span>
+<span class="comment">ℹ View run: https://dbc-7c3c71fa-cd49.cloud.databricks.com/...</span></div>
+
+                <h3>In Databricks UI</h3>
+                <p>Navigate to your workspace and:</p>
+                <ol style="margin-left: 40px; margin-bottom: 20px;">
+                    <li style="margin: 10px 0;">Click <strong>Data Engineering</strong> in the left sidebar</li>
+                    <li style="margin: 10px 0;">Select <strong>Job Runs</strong></li>
+                    <li style="margin: 10px 0;">Find your run by name or Run ID</li>
+                </ol>
+
+                <h3>Check Status Manually</h3>
+                <div class="code-block"><span class="command">databricks</span> <span class="flag">jobs get-run --profile</span> <span class="string">exploration</span> <span class="flag">&lt;RUN_ID&gt;</span></div>
+            </div>
+
+            <div class="section">
+                <h2>Troubleshooting</h2>
+
+                <h3>Authentication Errors</h3>
+                <p>If you encounter authentication issues:</p>
+                <div class="code-block"><span class="comment"># Reconfigure your profile</span>
+<span class="command">databricks</span> <span class="flag">configure --profile</span> <span class="string">exploration</span>
+
+<span class="comment"># Verify authentication</span>
+<span class="command">databricks</span> <span class="flag">auth describe --profile</span> <span class="string">exploration</span></div>
+
+                <h3>Job Not Found in UI</h3>
+                <p>Use the direct URL provided in the CLI output, or check the Jobs API directly:</p>
+                <div class="code-block"><span class="command">databricks</span> <span class="flag">jobs get-run --profile</span> <span class="string">exploration</span> <span class="flag">&lt;RUN_ID&gt; -o json</span></div>
+
+                <h3>Dependency Installation Issues</h3>
+                <p>Ensure dependencies are installed via <code>%pip</code> magic commands at the beginning of your notebook, not via the <code>--requirements</code> flag.</p>
+            </div>
+
+            <div class="section">
+                <h2>Best Practices</h2>
+                <ul style="margin-left: 40px;">
+                    <li style="margin: 15px 0;">Always use <code>dbutils.widgets</code> for parameter handling in notebooks</li>
+                    <li style="margin: 15px 0;">End notebooks with <code>dbutils.notebook.exit("SUCCESS")</code> for proper status reporting</li>
+                    <li style="margin: 15px 0;">Install dependencies at the notebook level using <code>%pip</code> magic commands</li>
+                    <li style="margin: 15px 0;">Use the <code>--wait</code> flag when you need immediate feedback on job completion</li>
+                    <li style="margin: 15px 0;">Use the <code>--verbose</code> flag for debugging job configuration issues</li>
+                    <li style="margin: 15px 0;">Keep notebooks in version control (GitHub) for better reproducibility</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Databricks Notebook Runner</p>
+            <p>Built for CD49 Workspace | Profile: exploration</p>
+            <p style="margin-top: 15px;">© 2025 | <a href="https://github.com/jdowzard/databricks_notebook" style="color: #667eea;">GitHub Repository</a></p>
+        </div>
+    </div>
+</body>
+</html>
