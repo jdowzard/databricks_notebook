@@ -358,29 +358,63 @@
             <div class="section">
                 <h2>Setup</h2>
 
-                <h3>Prerequisites</h3>
-                <p>Before using this tool, ensure you have:</p>
+                <h3>1. Install Databricks CLI</h3>
+                <div class="code-block"><span class="comment"># Install via pip</span>
+<span class="command">pip</span> <span class="flag">install</span> <span class="string">databricks-cli</span>
+
+<span class="comment"># Configure with your workspace</span>
+<span class="command">databricks</span> <span class="flag">configure --profile</span> <span class="string">my-profile-name</span></div>
+
+                <p style="margin-top: 15px;">You'll be prompted for:</p>
                 <ul style="margin-left: 40px; margin-bottom: 20px;">
-                    <li style="margin: 10px 0;">Databricks CLI installed and configured</li>
-                    <li style="margin: 10px 0;">Access to a Databricks workspace</li>
-                    <li style="margin: 10px 0;">Valid authentication credentials</li>
+                    <li style="margin: 10px 0;"><strong>Host:</strong> Your Databricks workspace URL (e.g., <code>https://dbc-xxx.cloud.databricks.com</code>)</li>
+                    <li style="margin: 10px 0;"><strong>Authentication:</strong> OAuth (recommended) or Personal Access Token</li>
                 </ul>
 
-                <h3>Configuration</h3>
-                <p>The tool uses the <code>exploration</code> profile by default (CD49 workspace). Your configuration is stored in <code>~/.databrickscfg</code>:</p>
+                <h3>2. Install Platform Dependencies</h3>
+                <p><strong>Linux/macOS:</strong> Install jq for JSON parsing</p>
+                <div class="code-block"><span class="comment"># macOS</span>
+<span class="command">brew</span> <span class="flag">install</span> <span class="string">jq</span>
+
+<span class="comment"># Ubuntu/Debian</span>
+<span class="command">sudo</span> <span class="flag">apt-get install</span> <span class="string">jq</span></div>
+
+                <p style="margin-top: 15px;"><strong>Windows:</strong> PowerShell 5.0+ (pre-installed on Windows 10+)</p>
+
+                <h3>3. Profile Configuration</h3>
+                <p>The scripts use profiles from <code>~/.databrickscfg</code>. The profile name can be <strong>anything you choose</strong>:</p>
 
                 <div class="code-block">[exploration]
-host      = https://dbc-7c3c71fa-cd49.cloud.databricks.com
+host = https://dbc-xxx.cloud.databricks.com
+auth_type = databricks-cli
+
+[production]
+host = https://another-workspace.cloud.databricks.com
 auth_type = databricks-cli</div>
 
-                <p>Verify your authentication:</p>
-                <div class="code-block"><span class="command">databricks</span> <span class="flag">auth describe --profile</span> <span class="string">exploration</span></div>
+                <p style="background: #fef3c7; border-left: 5px solid #f59e0b; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <strong>Default:</strong> Scripts use profile named <code>exploration</code><br><br>
+                    <strong>To use a different profile:</strong><br>
+                    • Use <code>--profile production</code> flag<br>
+                    • Set environment variable: <code>export DATABRICKS_PROFILE=production</code><br>
+                    • Or rename your profile to <code>exploration</code>
+                </p>
+
+                <h3>4. Using From Another Repository</h3>
+                <p>These scripts are self-contained. Just copy the 3 script files to your project:</p>
+                <div class="code-block"><span class="comment"># Copy scripts to your project</span>
+<span class="command">cp</span> ~/tools/databricks_notebook/bin/run-notebook.* ~/work/my-project/
+
+<span class="comment"># Or symlink them</span>
+<span class="command">ln</span> <span class="flag">-s</span> ~/tools/databricks_notebook/bin/run-notebook.sh ./</div>
+
+                <p style="margin-top: 15px;">No other files from this repository are required!</p>
 
                 <div class="test-results">
-                    <h4>Setup Verification</h4>
-                    <div class="test-item">Databricks CLI configured and authenticated</div>
-                    <div class="test-item">GitHub repository accessible</div>
-                    <div class="test-item">All test notebooks validated</div>
+                    <h4>Verify Setup</h4>
+                    <div class="test-item">Databricks CLI installed and configured</div>
+                    <div class="test-item">Profile accessible via <code>databricks auth describe</code></div>
+                    <div class="test-item">jq installed (Linux/macOS) or PowerShell 5.0+ (Windows)</div>
                 </div>
             </div>
 
@@ -603,21 +637,64 @@ auth_type = databricks-cli</div>
             </div>
 
             <div class="section">
+                <h2>Known Limitations & Edge Cases</h2>
+
+                <div style="background: #fee; border-left: 5px solid #f44; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #d00; margin-top: 0;">File Type Support</h3>
+                    <p style="margin: 10px 0;"><strong>Supported:</strong> Python notebooks (<code>.py</code> files with Databricks magic commands)</p>
+                    <p style="margin: 10px 0;"><strong>Not Supported:</strong> <code>.ipynb</code>, <code>.sql</code>, <code>.scala</code>, <code>.r</code> files</p>
+                    <p style="margin: 10px 0;"><strong>Workaround:</strong> Convert <code>.ipynb</code> to <code>.py</code> format before running</p>
+                </div>
+
+                <div style="background: #ffe; border-left: 5px solid #fa0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #c60; margin-top: 0;">Cleanup Behavior</h3>
+                    <p style="margin: 10px 0;">• <strong>With <code>--wait</code>:</strong> Automatic cleanup after job completion</p>
+                    <p style="margin: 10px 0;">• <strong>Without <code>--wait</code>:</strong> Manual cleanup required (script provides command)</p>
+                    <p style="margin: 10px 0;">• <strong>Interrupted execution:</strong> Temporary files may remain in <code>/Users/{username}/.tmp/</code></p>
+                    <div class="code-block" style="margin-top: 10px;"><span class="comment"># Manual cleanup if needed</span>
+<span class="command">databricks workspace delete</span> <span class="flag">--profile exploration</span> /Users/your.email/.tmp/notebook-xxxxx.py</div>
+                </div>
+
+                <h3>Performance Characteristics</h3>
+                <ul style="margin-left: 40px; margin-bottom: 20px;">
+                    <li style="margin: 10px 0;"><strong>Cold starts:</strong> 30-60 seconds for serverless compute provisioning</li>
+                    <li style="margin: 10px 0;"><strong>Concurrent runs:</strong> Multiple simultaneous runs supported</li>
+                    <li style="margin: 10px 0;"><strong>Large notebooks:</strong> No size limit, upload time scales with file size</li>
+                    <li style="margin: 10px 0;"><strong>Network issues:</strong> No automatic retry - manual rerun required</li>
+                </ul>
+
+                <h3>Authentication & Permissions</h3>
+                <ul style="margin-left: 40px; margin-bottom: 20px;">
+                    <li style="margin: 10px 0;"><strong>Token expiration:</strong> Long-running jobs may fail if token expires mid-execution</li>
+                    <li style="margin: 10px 0;"><strong>Private GitHub repos:</strong> Workspace must have git credentials configured</li>
+                    <li style="margin: 10px 0;"><strong>Required permissions:</strong> Create/delete in <code>/Users/{username}/</code>, submit serverless jobs</li>
+                </ul>
+
+                <h3>Platform Requirements</h3>
+                <ul style="margin-left: 40px;">
+                    <li style="margin: 10px 0;"><strong>Windows:</strong> PowerShell 5.0+ (included in Windows 10+)</li>
+                    <li style="margin: 10px 0;"><strong>Linux/macOS:</strong> <code>jq</code> required for JSON parsing</li>
+                    <li style="margin: 10px 0;"><strong>Line endings:</strong> Automatically handled across platforms</li>
+                </ul>
+            </div>
+
+            <div class="section">
                 <h2>Best Practices</h2>
                 <ul style="margin-left: 40px;">
                     <li style="margin: 15px 0;">Always use <code>dbutils.widgets</code> for parameter handling in notebooks</li>
                     <li style="margin: 15px 0;">End notebooks with <code>dbutils.notebook.exit("SUCCESS")</code> for proper status reporting</li>
                     <li style="margin: 15px 0;">Install dependencies at the notebook level using <code>%pip</code> magic commands</li>
-                    <li style="margin: 15px 0;">Use the <code>--wait</code> flag when you need immediate feedback on job completion</li>
+                    <li style="margin: 15px 0;">Use the <code>--wait</code> flag when running local notebooks to ensure automatic cleanup</li>
                     <li style="margin: 15px 0;">Use the <code>--verbose</code> flag for debugging job configuration issues</li>
                     <li style="margin: 15px 0;">Keep notebooks in version control (GitHub) for better reproducibility</li>
+                    <li style="margin: 15px 0;">Test with simple notebooks first before running complex production workloads</li>
                 </ul>
             </div>
         </div>
 
         <div class="footer">
             <p>Databricks Notebook Runner</p>
-            <p>Built for CD49 Workspace | Profile: exploration</p>
+            <p>Cross-Platform Serverless Notebook Execution</p>
             <p style="margin-top: 15px;">© 2025 | <a href="https://github.com/jdowzard/databricks_notebook" style="color: #667eea;">GitHub Repository</a></p>
         </div>
     </div>
