@@ -68,8 +68,63 @@ function Write-Warning {
     Write-Host $Message
 }
 
+# Cleanup function for temporary notebook
+function Cleanup-TempNotebook {
+    param(
+        [string]$Profile,
+        [string]$TempPath,
+        [bool]$ShouldCleanup
+    )
+
+    if ($ShouldCleanup -and $TempPath) {
+        Write-Info "Cleaning up temporary notebook..."
+        try {
+            databricks workspace delete --profile $Profile $TempPath 2>$null
+            Write-Success "Temporary notebook deleted: $TempPath"
+        }
+        catch {
+            Write-Warning "Failed to delete temporary notebook: $TempPath"
+        }
+    }
+}
+
 Write-Info "Databricks Profile: $Profile"
 Write-Info "Notebook Path: $NotebookPath"
+
+# Handle local notebook files
+$TempNotebookPath = ""
+$CleanupNotebook = $false
+
+# Check if notebook path is a local file
+if (Test-Path $NotebookPath -PathType Leaf) {
+    Write-Info "Mode: Local Notebook File"
+    Write-Info "Detected local notebook, uploading to workspace..."
+
+    # Get current user for workspace path
+    $CurrentUser = (databricks current-user me --profile $Profile -o json | ConvertFrom-Json).userName
+
+    # Ensure .tmp directory exists
+    $TmpDir = "/Users/$CurrentUser/.tmp"
+    databricks workspace mkdirs --profile $Profile $TmpDir 2>$null | Out-Null
+
+    # Generate temp workspace path
+    $Timestamp = [int][double]::Parse((Get-Date -UFormat %s))
+    $Basename = Split-Path -Leaf $NotebookPath
+    $TempNotebookPath = "$TmpDir/notebook-$Timestamp-$Basename"
+
+    # Upload notebook to workspace
+    try {
+        databricks workspace import --profile $Profile --file $NotebookPath --language PYTHON --format SOURCE --overwrite $TempNotebookPath 2>&1 | Out-Null
+        Write-Success "Notebook uploaded to: $TempNotebookPath"
+        $NotebookPath = $TempNotebookPath
+        $CleanupNotebook = $true
+    }
+    catch {
+        Write-ErrorMsg "Failed to upload local notebook to workspace"
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        exit 1
+    }
+}
 
 # Handle requirements.txt
 $Dependencies = "[]"
@@ -81,7 +136,7 @@ if ($Requirements) {
         Write-Info "Uploading $Requirements to $WorkspaceReqPath..."
 
         try {
-            databricks workspace import --profile $Profile $Requirements $WorkspaceReqPath --overwrite 2>$null
+            databricks workspace import --profile $Profile --file $Requirements --format AUTO --overwrite $WorkspaceReqPath 2>$null
             Write-Success "Requirements file uploaded"
             $Dependencies = "[`"-r $WorkspaceReqPath`"]"
         }
@@ -211,6 +266,7 @@ if ($Wait) {
 
     if ($FinalStatus -eq "SUCCESS") {
         Write-Success "Run completed successfully!"
+        Cleanup-TempNotebook -Profile $Profile -TempPath $TempNotebookPath -ShouldCleanup $CleanupNotebook
         exit 0
     }
     else {
@@ -219,10 +275,15 @@ if ($Wait) {
         if ($StateMsg) {
             Write-ErrorMsg "Error message: $StateMsg"
         }
+        Cleanup-TempNotebook -Profile $Profile -TempPath $TempNotebookPath -ShouldCleanup $CleanupNotebook
         exit 1
     }
 }
 else {
     Write-Info "Use -Wait to wait for completion, or check status with:"
     Write-Host "  databricks jobs get-run --profile $Profile $RunId"
+    Write-Warning "Note: Temporary notebook will not be cleaned up without -Wait flag"
+    if ($CleanupNotebook) {
+        Write-Warning "Manual cleanup required: databricks workspace delete --profile $Profile $TempNotebookPath"
+    }
 }

@@ -5,6 +5,7 @@ Generalizable Databricks notebook runner using serverless compute.
 ## Overview
 
 This repo provides a CLI wrapper for running any Databricks notebook using serverless compute, supporting:
+- **Local notebook files** (automatically uploaded and cleaned up)
 - Notebooks from GitHub repos
 - Notebooks from Databricks workspace
 - Dynamic requirements.txt dependencies
@@ -29,6 +30,26 @@ databricks_notebook/
 ```
 
 ## Usage
+
+### Run local notebook file
+
+**Linux/macOS:**
+```bash
+./bin/run-notebook.sh \
+  --notebook-path "./my_local_notebook.py" \
+  --params '{"date": "2025-10-30", "mode": "test"}' \
+  --wait
+```
+
+**Windows (PowerShell):**
+```powershell
+.\bin\run-notebook.ps1 `
+  -NotebookPath ".\my_local_notebook.py" `
+  -Params '{"date": "2025-10-30", "mode": "test"}' `
+  -Wait
+```
+
+**Note:** Local notebooks are automatically uploaded to your workspace (`/Users/your.email/.tmp/`), executed, and then cleaned up when using the `--wait` flag. Without `--wait`, manual cleanup is required.
 
 ### Run GitHub repo notebook
 

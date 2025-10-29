@@ -308,9 +308,13 @@
         <div class="content">
             <div class="section">
                 <h2>Overview</h2>
-                <p>A generalizable CLI wrapper for running any Databricks notebook using serverless compute. This tool streamlines the process of executing notebooks from GitHub repositories or Databricks workspace with dynamic parameters and dependencies.</p>
+                <p>A generalizable CLI wrapper for running any Databricks notebook using serverless compute. This tool streamlines the process of executing local notebooks, notebooks from GitHub repositories, or Databricks workspace notebooks with dynamic parameters and dependencies.</p>
 
                 <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>Local Notebooks</h3>
+                        <p>Run notebooks directly from your local filesystem with automatic upload and cleanup</p>
+                    </div>
                     <div class="feature-card">
                         <h3>GitHub Integration</h3>
                         <p>Run notebooks directly from GitHub repositories with automatic source syncing</p>
@@ -383,7 +387,24 @@ auth_type = databricks-cli</div>
             <div class="section">
                 <h2>How to Use</h2>
 
-                <h3>Basic Usage - GitHub Notebook</h3>
+                <h3>Run Local Notebook</h3>
+                <p>Run a notebook file from your local filesystem. The script automatically uploads it, executes it, and cleans it up:</p>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Linux/macOS:</h4>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"./my_local_notebook.py"</span> <span class="flag">\
+  --params</span> <span class="string">'{"date": "2025-10-30", "mode": "test"}'</span> <span class="flag">\
+  --wait</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Windows (PowerShell):</h4>
+                <div class="code-block"><span class="command">.\bin\run-notebook.ps1</span> <span class="flag">`
+  -NotebookPath</span> <span class="string">".\my_local_notebook.py"</span> <span class="flag">`
+  -Params</span> <span class="string">'{"date": "2025-10-30", "mode": "test"}'</span> <span class="flag">`
+  -Wait</span></div>
+
+                <p style="background: #fef3c7; border-left: 5px solid #f59e0b; padding: 15px; border-radius: 5px; margin: 20px 0;"><strong>Note:</strong> Local notebooks are uploaded to <code>/Users/your.email/.tmp/</code> and automatically cleaned up when using <code>--wait</code>. Without <code>--wait</code>, manual cleanup is required.</p>
+
+                <h3>Run GitHub Notebook</h3>
                 <p>Run a notebook from a GitHub repository with parameters:</p>
 
                 <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Linux/macOS:</h4>

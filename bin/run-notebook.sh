@@ -40,6 +40,18 @@ log_warn() {
     echo -e "${YELLOW}⚠${NC} $1"
 }
 
+# Cleanup function for temporary notebook
+cleanup_temp_notebook() {
+    if [ "$CLEANUP_NOTEBOOK" = true ] && [ -n "$TEMP_NOTEBOOK_PATH" ]; then
+        log_info "Cleaning up temporary notebook..."
+        if databricks workspace delete --profile "$DATABRICKS_PROFILE" "$TEMP_NOTEBOOK_PATH" 2>/dev/null; then
+            log_success "Temporary notebook deleted: $TEMP_NOTEBOOK_PATH"
+        else
+            log_warn "Failed to delete temporary notebook: $TEMP_NOTEBOOK_PATH"
+        fi
+    fi
+}
+
 show_usage() {
     cat << EOF
 Databricks Notebook Runner - Serverless Compute
@@ -60,6 +72,11 @@ Optional:
   --verbose                  Show verbose output
 
 Examples:
+  # Run local notebook file
+  $0 --notebook-path "./my_notebook.py" \\
+     --params '{"date": "2025-01-15"}' \\
+     --wait
+
   # Run GitHub repo notebook
   $0 --notebook-path "notebooks/test_simple" \\
      --git-url "https://github.com/jdowzard/databricks_notebook" \\
@@ -103,6 +120,38 @@ fi
 log_info "Databricks Profile: $DATABRICKS_PROFILE"
 log_info "Notebook Path: $NOTEBOOK_PATH"
 
+# Handle local notebook files
+TEMP_NOTEBOOK_PATH=""
+CLEANUP_NOTEBOOK=false
+
+# Check if notebook path is a local file
+if [ -f "$NOTEBOOK_PATH" ]; then
+  log_info "Mode: Local Notebook File"
+  log_info "Detected local notebook, uploading to workspace..."
+
+  # Get current user for workspace path
+  CURRENT_USER=$(databricks current-user me --profile "$DATABRICKS_PROFILE" -o json | jq -r '.userName')
+
+  # Ensure .tmp directory exists
+  TMP_DIR="/Users/${CURRENT_USER}/.tmp"
+  databricks workspace mkdirs --profile "$DATABRICKS_PROFILE" "$TMP_DIR" 2>/dev/null || true
+
+  # Generate temp workspace path
+  TIMESTAMP=$(date +%s)
+  BASENAME=$(basename "$NOTEBOOK_PATH")
+  TEMP_NOTEBOOK_PATH="${TMP_DIR}/notebook-${TIMESTAMP}-${BASENAME}"
+
+  # Upload notebook to workspace
+  if databricks workspace import --profile "$DATABRICKS_PROFILE" --file "$NOTEBOOK_PATH" --language PYTHON --format SOURCE --overwrite "$TEMP_NOTEBOOK_PATH" 2>&1; then
+    log_success "Notebook uploaded to: $TEMP_NOTEBOOK_PATH"
+    NOTEBOOK_PATH="$TEMP_NOTEBOOK_PATH"
+    CLEANUP_NOTEBOOK=true
+  else
+    log_error "Failed to upload local notebook to workspace"
+    exit 1
+  fi
+fi
+
 # Handle requirements.txt
 DEPENDENCIES="[]"
 if [ -n "$REQUIREMENTS_PATH" ]; then
@@ -111,7 +160,7 @@ if [ -n "$REQUIREMENTS_PATH" ]; then
     WORKSPACE_REQ_PATH="/Workspace/tmp/requirements-$(date +%s).txt"
     log_info "Uploading $REQUIREMENTS_PATH to $WORKSPACE_REQ_PATH..."
 
-    if databricks workspace import --profile "$DATABRICKS_PROFILE" "$REQUIREMENTS_PATH" "$WORKSPACE_REQ_PATH" --overwrite 2>/dev/null; then
+    if databricks workspace import --profile "$DATABRICKS_PROFILE" --file "$REQUIREMENTS_PATH" --format AUTO --overwrite "$WORKSPACE_REQ_PATH" 2>/dev/null; then
       log_success "Requirements file uploaded"
       DEPENDENCIES="[\"-r $WORKSPACE_REQ_PATH\"]"
     else
@@ -229,6 +278,7 @@ if [ "$WAIT_FOR_COMPLETION" = true ]; then
 
   if [ "$FINAL_STATUS" = "SUCCESS" ]; then
     log_success "Run completed successfully!"
+    cleanup_temp_notebook
     exit 0
   else
     log_error "Run failed with status: $FINAL_STATUS"
@@ -236,9 +286,14 @@ if [ "$WAIT_FOR_COMPLETION" = true ]; then
     if [ "$STATE_MSG" != "null" ] && [ -n "$STATE_MSG" ]; then
       log_error "Error message: $STATE_MSG"
     fi
+    cleanup_temp_notebook
     exit 1
   fi
 else
   log_info "Use --wait to wait for completion, or check status with:"
   echo "  databricks jobs get-run --profile $DATABRICKS_PROFILE $RUN_ID"
+  log_warn "Note: Temporary notebook will not be cleaned up without --wait flag"
+  if [ "$CLEANUP_NOTEBOOK" = true ]; then
+    log_warn "Manual cleanup required: databricks workspace delete --profile $DATABRICKS_PROFILE $TEMP_NOTEBOOK_PATH"
+  fi
 fi
