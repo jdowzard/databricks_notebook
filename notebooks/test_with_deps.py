@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # Test Notebook 2: Dependencies Test
 # MAGIC
-# MAGIC This notebook tests running with external dependencies from requirements.txt.
+# MAGIC This notebook tests running with external dependencies using %pip magic commands.
 # MAGIC
 # MAGIC **Dependencies:**
 # MAGIC - pandas
@@ -12,6 +12,21 @@
 # MAGIC **Parameters:**
 # MAGIC - `sample_size`: Number of sample records to generate
 # MAGIC - `test_url`: URL to test HTTP requests
+
+# COMMAND ----------
+
+# Install dependencies using %pip magic command
+# MAGIC %pip install pandas requests python-dateutil
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **Note:** After installing packages with %pip, we need to restart the Python process
+
+# COMMAND ----------
+
+# Restart Python to use newly installed packages
+dbutils.library.restartPython()
 
 # COMMAND ----------
 

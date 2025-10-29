@@ -126,10 +126,17 @@ if [ -n "$REQUIREMENTS_PATH" ]; then
 fi
 
 # Build JSON config
+# Note: For notebook tasks with serverless compute, we cannot use the environments array
+# Dependencies must be installed via %pip magic commands in the notebook itself
 if [ -n "$GIT_URL" ]; then
   log_info "Mode: GitHub Repository"
   log_info "Git URL: $GIT_URL"
   log_info "Git Branch: $GIT_BRANCH"
+
+  if [ -n "$REQUIREMENTS_PATH" ]; then
+    log_warn "Note: requirements.txt will be ignored for notebook tasks"
+    log_warn "Use %pip magic commands in your notebook instead"
+  fi
 
   # GitHub repo notebook
   CONFIG=$(cat <<EOF
@@ -145,14 +152,6 @@ if [ -n "$GIT_URL" ]; then
     "notebook_task": {
       "notebook_path": "$NOTEBOOK_PATH",
       "base_parameters": $PARAMS
-    },
-    "environment_key": "default"
-  }],
-  "environments": [{
-    "environment_key": "default",
-    "spec": {
-      "client": "1",
-      "dependencies": $DEPENDENCIES
     }
   }]
 }
@@ -160,6 +159,11 @@ EOF
 )
 else
   log_info "Mode: Workspace Notebook"
+
+  if [ -n "$REQUIREMENTS_PATH" ]; then
+    log_warn "Note: requirements.txt will be ignored for notebook tasks"
+    log_warn "Use %pip magic commands in your notebook instead"
+  fi
 
   # Workspace notebook
   CONFIG=$(cat <<EOF
@@ -170,14 +174,6 @@ else
     "notebook_task": {
       "notebook_path": "$NOTEBOOK_PATH",
       "base_parameters": $PARAMS
-    },
-    "environment_key": "default"
-  }],
-  "environments": [{
-    "environment_key": "default",
-    "spec": {
-      "client": "1",
-      "dependencies": $DEPENDENCIES
     }
   }]
 }
@@ -216,19 +212,35 @@ log_info "View run: ${WORKSPACE_URL}#job/0/run/${RUN_ID}"
 if [ "$WAIT_FOR_COMPLETION" = true ]; then
   log_info "Waiting for run to complete..."
 
-  databricks runs wait --profile "$DATABRICKS_PROFILE" --run-id "$RUN_ID"
+  # Poll for completion (new CLI doesn't have wait command)
+  while true; do
+    STATUS=$(databricks jobs get-run --profile "$DATABRICKS_PROFILE" "$RUN_ID" -o json | jq -r '.state.life_cycle_state')
+
+    if [ "$STATUS" = "TERMINATED" ] || [ "$STATUS" = "SKIPPED" ] || [ "$STATUS" = "INTERNAL_ERROR" ]; then
+      break
+    fi
+
+    echo -n "."
+    sleep 5
+  done
+
+  echo ""
 
   # Get final status
-  FINAL_STATUS=$(databricks runs get --profile "$DATABRICKS_PROFILE" --run-id "$RUN_ID" | jq -r '.state.result_state')
+  FINAL_STATUS=$(databricks jobs get-run --profile "$DATABRICKS_PROFILE" "$RUN_ID" -o json | jq -r '.state.result_state')
 
   if [ "$FINAL_STATUS" = "SUCCESS" ]; then
     log_success "Run completed successfully!"
     exit 0
   else
     log_error "Run failed with status: $FINAL_STATUS"
+    STATE_MSG=$(databricks jobs get-run --profile "$DATABRICKS_PROFILE" "$RUN_ID" -o json | jq -r '.state.state_message')
+    if [ "$STATE_MSG" != "null" ] && [ -n "$STATE_MSG" ]; then
+      log_error "Error message: $STATE_MSG"
+    fi
     exit 1
   fi
 else
   log_info "Use --wait to wait for completion, or check status with:"
-  echo "  databricks runs get --profile $DATABRICKS_PROFILE --run-id $RUN_ID"
+  echo "  databricks jobs get-run --profile $DATABRICKS_PROFILE $RUN_ID"
 fi
