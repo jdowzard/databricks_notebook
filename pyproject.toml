@@ -1,0 +1,17 @@
+[tool.ruff]
+# Exclude Databricks notebooks from certain checks
+extend-exclude = ["notebooks/*.py"]
+
+[tool.ruff.lint]
+# For notebooks that can't be excluded, allow these globals
+# dbutils and spark are Databricks runtime globals
+extend-ignore = ["F821"]  # undefined-name for dbutils, spark, etc.
+
+[tool.ruff.lint.per-file-ignores]
+# Databricks notebooks have special requirements
+"notebooks/*.py" = [
+    "F821",  # Allow undefined names (dbutils, spark)
+    "E402",  # Allow module imports not at top (due to MAGIC commands)
+    "F401",  # Allow unused imports
+    "F541",  # Allow f-strings without placeholders
+]
