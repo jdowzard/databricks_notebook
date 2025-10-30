@@ -308,12 +308,16 @@
         <div class="content">
             <div class="section">
                 <h2>Overview</h2>
-                <p>A generalizable CLI wrapper for running any Databricks notebook using serverless compute. This tool streamlines the process of executing local notebooks, notebooks from GitHub repositories, or Databricks workspace notebooks with dynamic parameters and dependencies.</p>
+                <p>A generalizable CLI wrapper for running any Databricks notebook using serverless compute. This tool streamlines the process of executing local notebooks (Python .py or Jupyter .ipynb), notebooks from GitHub repositories, or Databricks workspace notebooks with dynamic parameters and dependencies.</p>
 
                 <div class="feature-grid">
                     <div class="feature-card">
                         <h3>Local Notebooks</h3>
                         <p>Run notebooks directly from your local filesystem with automatic upload and cleanup</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Jupyter Conversion</h3>
+                        <p>Automatically converts .ipynb files to Databricks format with seamless execution</p>
                     </div>
                     <div class="feature-card">
                         <h3>GitHub Integration</h3>
@@ -331,10 +335,6 @@
                         <h3>Dynamic Parameters</h3>
                         <p>Pass JSON parameters at runtime for flexible notebook execution</p>
                     </div>
-                    <div class="feature-card">
-                        <h3>Dependency Management</h3>
-                        <p>Support for pip dependencies via notebook magic commands</p>
-                    </div>
                 </div>
             </div>
 
@@ -345,12 +345,15 @@
 │   ├── run-notebook.sh          <span class="comment"># CLI wrapper script (Linux/macOS)</span>
 │   ├── run-notebook.ps1         <span class="comment"># PowerShell script (Windows)</span>
 │   └── run-notebook.bat         <span class="comment"># Batch wrapper (Windows)</span>
+├── convert_ipynb.py             <span class="comment"># Jupyter notebook converter</span>
 ├── notebooks/
 │   ├── test_simple.py           <span class="comment"># Test: Simple notebook with parameters</span>
 │   ├── test_with_deps.py        <span class="comment"># Test: Notebook with dependencies</span>
 │   └── test_unity_catalog.py   <span class="comment"># Test: Notebook accessing Unity Catalog</span>
+├── test_*.ipynb                 <span class="comment"># Test: Jupyter conversion tests</span>
 ├── docs/
 │   └── index.html               <span class="comment"># This documentation</span>
+├── IPYNB_CONVERSION_TEST_RESULTS.md  <span class="comment"># .ipynb conversion test results</span>
 ├── requirements.txt             <span class="comment"># Shared dependencies</span>
 └── notebooks/requirements-test.txt <span class="comment"># Test-specific dependencies</span></div>
             </div>
@@ -371,7 +374,15 @@
                     <li style="margin: 10px 0;"><strong>Authentication:</strong> OAuth (recommended) or Personal Access Token</li>
                 </ul>
 
-                <h3>2. Install Platform Dependencies</h3>
+                <h3>2. Install Python 3 (for .ipynb conversion)</h3>
+                <p>Required for Jupyter notebook conversion. Pre-installed on most systems.</p>
+                <div class="code-block"><span class="comment"># macOS</span>
+<span class="command">brew</span> <span class="flag">install</span> <span class="string">python3</span>
+
+<span class="comment"># Ubuntu/Debian</span>
+<span class="command">sudo</span> <span class="flag">apt-get install</span> <span class="string">python3</span></div>
+
+                <h3>3. Install Platform Dependencies</h3>
                 <p><strong>Linux/macOS:</strong> Install jq for JSON parsing</p>
                 <div class="code-block"><span class="comment"># macOS</span>
 <span class="command">brew</span> <span class="flag">install</span> <span class="string">jq</span>
@@ -381,7 +392,7 @@
 
                 <p style="margin-top: 15px;"><strong>Windows:</strong> PowerShell 5.0+ (pre-installed on Windows 10+)</p>
 
-                <h3>3. Profile Configuration</h3>
+                <h3>4. Profile Configuration</h3>
                 <p>The scripts use profiles from <code>~/.databrickscfg</code>. The profile name can be <strong>anything you choose</strong>:</p>
 
                 <div class="code-block">[exploration]
@@ -400,7 +411,7 @@ auth_type = databricks-cli</div>
                     • Or rename your profile to <code>exploration</code>
                 </p>
 
-                <h3>4. Using From Another Repository</h3>
+                <h3>5. Using From Another Repository</h3>
                 <p>These scripts are self-contained. Just copy the 3 script files to your project:</p>
                 <div class="code-block"><span class="comment"># Copy scripts to your project</span>
 <span class="command">cp</span> ~/tools/databricks_notebook/bin/run-notebook.* ~/work/my-project/
@@ -413,6 +424,7 @@ auth_type = databricks-cli</div>
                 <div class="test-results">
                     <h4>Verify Setup</h4>
                     <div class="test-item">Databricks CLI installed and configured</div>
+                    <div class="test-item">Python 3 installed (for .ipynb conversion)</div>
                     <div class="test-item">Profile accessible via <code>databricks auth describe</code></div>
                     <div class="test-item">jq installed (Linux/macOS) or PowerShell 5.0+ (Windows)</div>
                 </div>
@@ -437,6 +449,31 @@ auth_type = databricks-cli</div>
   -Wait</span></div>
 
                 <p style="background: #fef3c7; border-left: 5px solid #f59e0b; padding: 15px; border-radius: 5px; margin: 20px 0;"><strong>Note:</strong> Local notebooks are uploaded to <code>/Users/your.email/.tmp/</code> and automatically cleaned up when using <code>--wait</code>. Without <code>--wait</code>, manual cleanup is required.</p>
+
+                <h3>Run Jupyter Notebook (.ipynb)</h3>
+                <p>Automatically converts and runs Jupyter notebooks. The conversion happens on-the-fly - no manual conversion needed:</p>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Linux/macOS:</h4>
+                <div class="code-block"><span class="command">./bin/run-notebook.sh</span> <span class="flag">\
+  --notebook-path</span> <span class="string">"./analysis.ipynb"</span> <span class="flag">\
+  --wait</span></div>
+
+                <h4 style="color: #667eea; font-size: 1.1em; margin: 15px 0 10px 0;">Windows (PowerShell):</h4>
+                <div class="code-block"><span class="command">.\bin\run-notebook.ps1</span> <span class="flag">`
+  -NotebookPath</span> <span class="string">".\analysis.ipynb"</span> <span class="flag">`
+  -Wait</span></div>
+
+                <p style="background: #e0f2fe; border-left: 5px solid #0284c7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <strong>How it works:</strong><br>
+                    • Automatically detects <code>.ipynb</code> files<br>
+                    • Converts to Databricks format (markdown → <code># MAGIC %md</code>)<br>
+                    • Executes on Databricks serverless compute<br>
+                    • Cleans up both converted <code>.py</code> and temporary workspace files<br><br>
+                    <strong>What's supported:</strong> Standard code/markdown cells, Jupyter magics (preserved), LaTeX, tables, HTML<br>
+                    <strong>Handled gracefully:</strong> ipywidgets (won't display but won't break execution)<br>
+                    <strong>Not supported:</strong> Jupyter extensions, out-of-order execution<br><br>
+                    See <code>IPYNB_CONVERSION_TEST_RESULTS.md</code> for detailed compatibility info.
+                </p>
 
                 <h3>Run GitHub Notebook</h3>
                 <p>Run a notebook from a GitHub repository with parameters:</p>
@@ -639,11 +676,20 @@ auth_type = databricks-cli</div>
             <div class="section">
                 <h2>Known Limitations & Edge Cases</h2>
 
-                <div style="background: #fee; border-left: 5px solid #f44; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #d00; margin-top: 0;">File Type Support</h3>
-                    <p style="margin: 10px 0;"><strong>Supported:</strong> Python notebooks (<code>.py</code> files with Databricks magic commands)</p>
-                    <p style="margin: 10px 0;"><strong>Not Supported:</strong> <code>.ipynb</code>, <code>.sql</code>, <code>.scala</code>, <code>.r</code> files</p>
-                    <p style="margin: 10px 0;"><strong>Workaround:</strong> Convert <code>.ipynb</code> to <code>.py</code> format before running</p>
+                <div style="background: #e0ffe0; border-left: 5px solid #0a0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #060; margin-top: 0;">File Type Support</h3>
+                    <p style="margin: 10px 0;"><strong>✅ Fully Supported:</strong></p>
+                    <ul style="margin: 10px 0 10px 30px;">
+                        <li>Python notebooks (<code>.py</code> files with Databricks magic commands)</li>
+                        <li>Jupyter notebooks (<code>.ipynb</code> - automatically converted)</li>
+                    </ul>
+                    <p style="margin: 10px 0;"><strong>⚠️ Jupyter (.ipynb) Conversion Details:</strong></p>
+                    <ul style="margin: 10px 0 10px 30px;">
+                        <li><strong>Works:</strong> Standard code cells, markdown (tables, LaTeX, HTML), Jupyter magics (preserved)</li>
+                        <li><strong>Handled Gracefully:</strong> ipywidgets (won't display but execution continues)</li>
+                        <li><strong>Doesn't Work:</strong> Jupyter extensions, custom magics, out-of-order execution</li>
+                    </ul>
+                    <p style="margin: 10px 0;"><strong>❌ Not Supported:</strong> <code>.sql</code>, <code>.scala</code>, <code>.r</code> files</p>
                 </div>
 
                 <div style="background: #ffe; border-left: 5px solid #fa0; padding: 20px; border-radius: 8px; margin: 20px 0;">
