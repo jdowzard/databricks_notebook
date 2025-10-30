@@ -40,7 +40,7 @@ log_warn() {
     echo -e "${YELLOW}⚠${NC} $1"
 }
 
-# Cleanup function for temporary notebook
+# Cleanup function for temporary notebook and converted files
 cleanup_temp_notebook() {
     if [ "$CLEANUP_NOTEBOOK" = true ] && [ -n "$TEMP_NOTEBOOK_PATH" ]; then
         log_info "Cleaning up temporary notebook..."
@@ -48,6 +48,16 @@ cleanup_temp_notebook() {
             log_success "Temporary notebook deleted: $TEMP_NOTEBOOK_PATH"
         else
             log_warn "Failed to delete temporary notebook: $TEMP_NOTEBOOK_PATH"
+        fi
+    fi
+
+    # Cleanup converted .ipynb file
+    if [ -n "$CONVERTED_FILE" ] && [ -f "$CONVERTED_FILE" ]; then
+        log_info "Cleaning up converted file..."
+        if rm "$CONVERTED_FILE" 2>/dev/null; then
+            log_success "Converted file deleted: $CONVERTED_FILE"
+        else
+            log_warn "Failed to delete converted file: $CONVERTED_FILE"
         fi
     fi
 }
@@ -72,9 +82,13 @@ Optional:
   --verbose                  Show verbose output
 
 Examples:
-  # Run local notebook file
+  # Run local notebook file (.py or .ipynb)
   $0 --notebook-path "./my_notebook.py" \\
      --params '{"date": "2025-01-15"}' \\
+     --wait
+
+  # Run Jupyter notebook (.ipynb automatically converted)
+  $0 --notebook-path "./analysis.ipynb" \\
      --wait
 
   # Run GitHub repo notebook
@@ -119,6 +133,32 @@ fi
 
 log_info "Databricks Profile: $DATABRICKS_PROFILE"
 log_info "Notebook Path: $NOTEBOOK_PATH"
+
+# Handle .ipynb conversion
+CONVERTED_FILE=""
+if [[ "$NOTEBOOK_PATH" == *.ipynb ]]; then
+  log_info "Detected .ipynb file, converting to Databricks format..."
+
+  # Find the converter script (in project root or same directory as this script)
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  CONVERTER="$SCRIPT_DIR/../convert_ipynb.py"
+
+  if [ ! -f "$CONVERTER" ]; then
+    log_error "Converter not found: $CONVERTER"
+    exit 1
+  fi
+
+  # Convert the notebook
+  CONVERTED_FILE="${NOTEBOOK_PATH%.ipynb}.py"
+  if python3 "$CONVERTER" "$NOTEBOOK_PATH" "$CONVERTED_FILE" > /dev/null 2>&1; then
+    log_success "Converted to: $CONVERTED_FILE"
+    log_warn "Note: Some Jupyter features may not work (ipywidgets, extensions)"
+    NOTEBOOK_PATH="$CONVERTED_FILE"
+  else
+    log_error "Failed to convert .ipynb file"
+    exit 1
+  fi
+fi
 
 # Handle local notebook files
 TEMP_NOTEBOOK_PATH=""

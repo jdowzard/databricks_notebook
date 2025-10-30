@@ -5,7 +5,8 @@ Generalizable Databricks notebook runner using serverless compute.
 ## Overview
 
 This repo provides a CLI wrapper for running any Databricks notebook using serverless compute, supporting:
-- **Local notebook files** (automatically uploaded and cleaned up)
+- **Local notebook files** - Python (`.py`) or Jupyter (`.ipynb`) - automatically uploaded and cleaned up
+- **Jupyter notebook conversion** - `.ipynb` files automatically converted to Databricks format
 - Notebooks from GitHub repos
 - Notebooks from Databricks workspace
 - Dynamic requirements.txt dependencies
@@ -19,12 +20,15 @@ databricks_notebook/
 │   ├── run-notebook.sh          # CLI wrapper script (Linux/macOS)
 │   ├── run-notebook.ps1         # PowerShell script (Windows)
 │   └── run-notebook.bat         # Batch wrapper (Windows)
+├── convert_ipynb.py             # Jupyter notebook converter
 ├── notebooks/
 │   ├── test_simple.py           # Test: Simple notebook with parameters
 │   ├── test_with_deps.py        # Test: Notebook with dependencies
 │   └── test_unity_catalog.py   # Test: Notebook accessing Unity Catalog
+├── test_*.ipynb                 # Test: Jupyter conversion tests
 ├── docs/
 │   └── index.html               # Full documentation
+├── IPYNB_CONVERSION_TEST_RESULTS.md  # .ipynb conversion test results
 ├── requirements.txt             # Shared dependencies
 └── notebooks/requirements-test.txt # Test-specific dependencies
 ```
@@ -46,7 +50,16 @@ databricks_notebook/
    - **Host**: Your Databricks workspace URL (e.g., `https://dbc-xxx.cloud.databricks.com`)
    - **Authentication**: Choose OAuth (recommended) or Personal Access Token
 
-2. **jq** (Linux/macOS only) - JSON processor for bash script:
+2. **Python 3** (for .ipynb conversion) - Pre-installed on most systems:
+   ```bash
+   # macOS
+   brew install python3
+
+   # Ubuntu/Debian
+   sudo apt-get install python3
+   ```
+
+3. **jq** (Linux/macOS only) - JSON processor for bash script:
    ```bash
    # macOS
    brew install jq
@@ -55,7 +68,7 @@ databricks_notebook/
    sudo apt-get install jq
    ```
 
-3. **PowerShell** (Windows only) - Comes pre-installed on Windows 10+
+4. **PowerShell** (Windows only) - Comes pre-installed on Windows 10+
 
 ### Profile Configuration
 
@@ -128,6 +141,31 @@ git submodule add https://github.com/jdowzard/databricks_notebook.git tools/data
 ```
 
 **Note:** Local notebooks are automatically uploaded to your workspace (`/Users/your.email/.tmp/`), executed, and then cleaned up when using the `--wait` flag. Without `--wait`, manual cleanup is required.
+
+### Run Jupyter notebook (.ipynb)
+
+**Linux/macOS:**
+```bash
+./bin/run-notebook.sh \
+  --notebook-path "./analysis.ipynb" \
+  --wait
+```
+
+**Windows (PowerShell):**
+```powershell
+.\bin\run-notebook.ps1 `
+  -NotebookPath ".\analysis.ipynb" `
+  -Wait
+```
+
+**How it works:**
+- `.ipynb` files are automatically detected and converted to Databricks `.py` format
+- Markdown cells → `# MAGIC %md` format
+- Code cells preserved as-is
+- Both the converted `.py` file and temporary workspace file are cleaned up after execution
+- See `IPYNB_CONVERSION_TEST_RESULTS.md` for details on what Jupyter features are supported
+
+**Note:** Some Jupyter features won't work in Databricks (ipywidgets, custom extensions), but execution continues gracefully.
 
 ### Run GitHub repo notebook
 
@@ -225,9 +263,17 @@ Uses `databricks jobs submit` API with:
 ## Known Limitations & Edge Cases
 
 ### File Types
-- **Supported**: Python notebooks (`.py` files with Databricks magic commands)
-- **Not supported**: `.ipynb`, `.sql`, `.scala`, `.r` files (PRs welcome!)
-- **Workaround**: Convert `.ipynb` to `.py` format before running
+- **Supported**:
+  - Python notebooks (`.py` files with Databricks magic commands)
+  - Jupyter notebooks (`.ipynb` - automatically converted)
+- **Jupyter conversion support**:
+  - ✅ Standard code cells
+  - ✅ Markdown cells (tables, LaTeX, HTML)
+  - ✅ Jupyter magics (preserved but may not execute: `%time`, `%%bash`, etc.)
+  - ⚠️ ipywidgets - Databricks handles gracefully (no execution failure)
+  - ❌ Jupyter extensions/custom magics - Not supported
+  - ❌ Out-of-order execution - Databricks runs sequentially
+- **Not supported**: `.sql`, `.scala`, `.r` files (PRs welcome!)
 
 ### Dependencies
 - **Notebook tasks**: Must use `%pip install` magic commands within the notebook

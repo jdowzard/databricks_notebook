@@ -68,12 +68,13 @@ function Write-Warning {
     Write-Host $Message
 }
 
-# Cleanup function for temporary notebook
+# Cleanup function for temporary notebook and converted files
 function Cleanup-TempNotebook {
     param(
         [string]$Profile,
         [string]$TempPath,
-        [bool]$ShouldCleanup
+        [bool]$ShouldCleanup,
+        [string]$ConvertedFile = ""
     )
 
     if ($ShouldCleanup -and $TempPath) {
@@ -86,10 +87,51 @@ function Cleanup-TempNotebook {
             Write-Warning "Failed to delete temporary notebook: $TempPath"
         }
     }
+
+    # Cleanup converted .ipynb file
+    if ($ConvertedFile -and (Test-Path $ConvertedFile)) {
+        Write-Info "Cleaning up converted file..."
+        try {
+            Remove-Item $ConvertedFile -Force
+            Write-Success "Converted file deleted: $ConvertedFile"
+        }
+        catch {
+            Write-Warning "Failed to delete converted file: $ConvertedFile"
+        }
+    }
 }
 
 Write-Info "Databricks Profile: $Profile"
 Write-Info "Notebook Path: $NotebookPath"
+
+# Handle .ipynb conversion
+$ConvertedFile = ""
+if ($NotebookPath -match '\.ipynb$') {
+    Write-Info "Detected .ipynb file, converting to Databricks format..."
+
+    # Find the converter script (in project root or same directory as this script)
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $Converter = Join-Path $ScriptDir "..\convert_ipynb.py"
+
+    if (-not (Test-Path $Converter)) {
+        Write-ErrorMsg "Converter not found: $Converter"
+        exit 1
+    }
+
+    # Convert the notebook
+    $ConvertedFile = $NotebookPath -replace '\.ipynb$', '.py'
+    try {
+        python3 $Converter $NotebookPath $ConvertedFile 2>&1 | Out-Null
+        Write-Success "Converted to: $ConvertedFile"
+        Write-Warning "Note: Some Jupyter features may not work (ipywidgets, extensions)"
+        $NotebookPath = $ConvertedFile
+    }
+    catch {
+        Write-ErrorMsg "Failed to convert .ipynb file"
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        exit 1
+    }
+}
 
 # Handle local notebook files
 $TempNotebookPath = ""
@@ -266,7 +308,7 @@ if ($Wait) {
 
     if ($FinalStatus -eq "SUCCESS") {
         Write-Success "Run completed successfully!"
-        Cleanup-TempNotebook -Profile $Profile -TempPath $TempNotebookPath -ShouldCleanup $CleanupNotebook
+        Cleanup-TempNotebook -Profile $Profile -TempPath $TempNotebookPath -ShouldCleanup $CleanupNotebook -ConvertedFile $ConvertedFile
         exit 0
     }
     else {
@@ -275,7 +317,7 @@ if ($Wait) {
         if ($StateMsg) {
             Write-ErrorMsg "Error message: $StateMsg"
         }
-        Cleanup-TempNotebook -Profile $Profile -TempPath $TempNotebookPath -ShouldCleanup $CleanupNotebook
+        Cleanup-TempNotebook -Profile $Profile -TempPath $TempNotebookPath -ShouldCleanup $CleanupNotebook -ConvertedFile $ConvertedFile
         exit 1
     }
 }

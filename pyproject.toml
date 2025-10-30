@@ -1,6 +1,6 @@
 [tool.ruff]
 # Exclude Databricks notebooks from certain checks
-extend-exclude = ["notebooks/*.py"]
+extend-exclude = ["notebooks/*.py", "test_*.py", "test_*.ipynb"]
 
 [tool.ruff.lint]
 # For notebooks that can't be excluded, allow these globals
@@ -14,4 +14,12 @@ extend-ignore = ["F821"]  # undefined-name for dbutils, spark, etc.
     "E402",  # Allow module imports not at top (due to MAGIC commands)
     "F401",  # Allow unused imports
     "F541",  # Allow f-strings without placeholders
+]
+# Test notebooks (converted from .ipynb)
+"test_*.py" = [
+    "F821",  # Allow undefined names
+    "E402",  # Allow module imports not at top
+    "F401",  # Allow unused imports
+    "F541",  # Allow f-strings without placeholders
+    "E999",  # Allow syntax errors (Jupyter magics)
 ]
