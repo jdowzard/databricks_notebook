@@ -8,6 +8,8 @@ env/
 venv/
 ENV/
 .venv
+.mypy_cache/
+.ruff_cache/
 
 # Databricks
 .databricks/

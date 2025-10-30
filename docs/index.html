@@ -350,10 +350,8 @@
 │   ├── test_simple.py           <span class="comment"># Test: Simple notebook with parameters</span>
 │   ├── test_with_deps.py        <span class="comment"># Test: Notebook with dependencies</span>
 │   └── test_unity_catalog.py   <span class="comment"># Test: Notebook accessing Unity Catalog</span>
-├── test_*.ipynb                 <span class="comment"># Test: Jupyter conversion tests</span>
 ├── docs/
 │   └── index.html               <span class="comment"># This documentation</span>
-├── IPYNB_CONVERSION_TEST_RESULTS.md  <span class="comment"># .ipynb conversion test results</span>
 ├── requirements.txt             <span class="comment"># Shared dependencies</span>
 └── notebooks/requirements-test.txt <span class="comment"># Test-specific dependencies</span></div>
             </div>
@@ -471,8 +469,7 @@ auth_type = databricks-cli</div>
                     • Cleans up both converted <code>.py</code> and temporary workspace files<br><br>
                     <strong>What's supported:</strong> Standard code/markdown cells, Jupyter magics (preserved), LaTeX, tables, HTML<br>
                     <strong>Handled gracefully:</strong> ipywidgets (won't display but won't break execution)<br>
-                    <strong>Not supported:</strong> Jupyter extensions, out-of-order execution<br><br>
-                    See <code>IPYNB_CONVERSION_TEST_RESULTS.md</code> for detailed compatibility info.
+                    <strong>Not supported:</strong> Jupyter extensions, out-of-order execution
                 </p>
 
                 <h3>Run GitHub Notebook</h3>

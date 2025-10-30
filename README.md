@@ -25,10 +25,8 @@ databricks_notebook/
 │   ├── test_simple.py           # Test: Simple notebook with parameters
 │   ├── test_with_deps.py        # Test: Notebook with dependencies
 │   └── test_unity_catalog.py   # Test: Notebook accessing Unity Catalog
-├── test_*.ipynb                 # Test: Jupyter conversion tests
 ├── docs/
 │   └── index.html               # Full documentation
-├── IPYNB_CONVERSION_TEST_RESULTS.md  # .ipynb conversion test results
 ├── requirements.txt             # Shared dependencies
 └── notebooks/requirements-test.txt # Test-specific dependencies
 ```
@@ -163,7 +161,6 @@ git submodule add https://github.com/jdowzard/databricks_notebook.git tools/data
 - Markdown cells → `# MAGIC %md` format
 - Code cells preserved as-is
 - Both the converted `.py` file and temporary workspace file are cleaned up after execution
-- See `IPYNB_CONVERSION_TEST_RESULTS.md` for details on what Jupyter features are supported
 
 **Note:** Some Jupyter features won't work in Databricks (ipywidgets, custom extensions), but execution continues gracefully.
 
